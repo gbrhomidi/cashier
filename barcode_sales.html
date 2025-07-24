@@ -1,0 +1,2214 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>مبيعات بالباركود</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+  <script src="{{ url_for('static', filename='js/zxing-js.umd.js')}}"></script>
+  <style>
+    :root {
+      --bg-color: #f2fbff;
+      --card-color: #ffffff;
+      --primary3-color: #4B0082;
+      --primary-color: #007ACC;
+      --primary-hover: #005e99;
+      --primary2-color: #000000;
+      --primary2-hover: #4B0082;
+      --secondary-hover: #004c7a;
+      --text-color: #000000;
+      --success: #4CAF50;
+      --error: #f44336;
+      --gold: #FFD700;
+      --gold-glow: 0 0 10px #FFD700, 0 0 20px #FFA500;
+      --blue-glow: 0 0 10px #007ACC, 0 0 20px #005e99;
+      --red-glow: 0 0 10px #f44336, 0 0 20px #d32f2f;
+      --glass-bg: rgba(75, 0, 130, 0.25);
+      --glass-border: rgba(255, 255, 255, 0.15);
+      --accent-color: rgba(100, 149, 237, 0.4);
+      --sidebar-bg: rgba(255, 255, 255, 0.9);
+      --sidebar-btn-bg: rgba(75, 0, 130, 0.8);
+      --glow-light: rgba(0, 122, 204, 0.5);
+      --glow-dark: rgba(255, 165, 0, 0.5);
+      --input-border-light: #003366;
+      --input-border-dark: #1fa2ff;
+      --highlight-border-light: #003366;
+      --highlight-border-dark: #4CAF50;
+      --delete-border-light: #f44336;
+      --delete-border-dark: #d32f2f;
+    }
+    [data-theme="dark"] {
+      --bg-color: #121212;
+      --card-color: #1e1e1e;
+      --primary-color: #1fa2ff;
+      --primary-hover: #0d81cc;
+      --secondary-hover: #0a6aa8;
+      --text-color: #f0f0f0;
+      --success: #388E3C;
+      --error: #d32f2f;
+      --gold: #FFD700;
+      --gold-glow: 0 0 10px #FFD700, 0 0 20px #FFA500;
+      --blue-glow: 0 0 10px #1fa2ff, 0 0 20px #0d81cc;
+      --red-glow: 0 0 10px #d32f2f, 0 0 20px #b71c1c;
+      --glass-bg: rgba(43, 0, 82, 0.4);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --accent-color: rgba(100, 149, 237, 0.3);
+      --sidebar-bg: rgba(30, 30, 30, 0.9);
+      --sidebar-btn-bg: rgba(90, 26, 154, 0.8);
+      --glow-light: rgba(0, 122, 204, 0.3);
+      --glow-dark: rgba(255, 165, 0, 0.6);
+    }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 10px;
+      direction: rtl;
+      transition: background 0.3s, color 0.3s;
+      overflow-x: hidden;
+      margin: 0;
+      padding-top: 70px;
+      touch-action: manipulation;
+      background-image: radial-gradient(circle at 20% 30%, rgba(0,122,204,0.05) 0%, transparent 20%),
+                        radial-gradient(circle at 80% 70%, rgba(75,0,130,0.05) 0%, transparent 20%);
+    }
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      background: linear-gradient(135deg, var(--primary2-color), var(--primary2-hover));
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      height: 50px;
+      border-bottom: 2px solid var(--gold);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+      margin-top: 2px;
+    }
+    h2 {
+      color: var(--primary-color);
+      margin: 0;
+      font-size: 1.5rem;
+      text-align: right;
+    }
+    .mode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .container {
+      background-color: var(--card-color);
+      border-radius: 16px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      padding: 15px;
+      max-width: 100%;
+      margin: auto;
+      overflow: hidden;
+      position: relative;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+    .form-grid input, .form-grid select, .form-grid textarea {
+      padding: 12px 15px;
+      border-radius: 10px;
+      border: 2px solid var(--input-border-light);
+      font-size: 1rem;
+      width: 100%;
+      background-color: var(--card-color);
+      color: var(--text-color);
+      box-sizing: border-box;
+      transition: all 0.3s;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    [data-theme="dark"] .form-grid input, 
+    [data-theme="dark"] .form-grid select, 
+    [data-theme="dark"] .form-grid textarea {
+      border: 2px solid var(--input-border-dark);
+    }
+    .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 8px rgba(0,122,204,0.5);
+      outline: none;
+    }
+    .horizontal-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .horizontal-row > div {
+      flex: 1;
+      min-width: 120px;
+    }
+    .sidebar {
+      position: fixed;
+      top: 50%;
+      right: -90px;
+      transform: translateY(-50%);
+      width: 65px;
+      background: var(--sidebar-bg);
+      z-index: 999;
+      transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      padding: 8px;
+      border-radius: 15px 0 0 15px;
+      overflow-y: auto;
+      box-shadow: -5px 0 20px rgba(0,0,0,0.4);
+      perspective: 1000px;
+      transform-style: preserve-3d;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      opacity: 1;
+      transform: translateY(-50%) translateX(0) rotateY(90deg) scale(0.8);
+      border-right: 3px solid var(--glow-light);
+      animation: borderPulse 2s infinite alternate;
+    }
+    [data-theme="dark"] .sidebar {
+      border-right: 3px solid var(--glow-dark);
+      animation: borderPulseDark 2s infinite alternate;
+    }
+    @keyframes borderPulse {
+      0% { box-shadow: -5px 0 10px var(--glow-light); }
+      100% { box-shadow: -5px 0 20px var(--glow-light); }
+    }
+    @keyframes borderPulseDark {
+      0% { box-shadow: -5px 0 10px var(--glow-dark); }
+      100% { box-shadow: -5px 0 20px var(--glow-dark); }
+    }
+    .sidebar.open {
+      right: 0;
+      opacity: 1;
+      transform: translateY(-50%) translateX(0) rotateY(0) scale(1);
+    }
+    .sidebar.rip-open {
+      animation: ripOpen 0.7s forwards;
+    }
+    .sidebar.curl-open {
+      animation: curlOpen 0.7s forwards;
+    }
+    @keyframes ripOpen {
+      0% {
+        transform: translateY(-50%) translateX(100px) rotateY(90deg) scale(0.8);
+        opacity: 0;
+      }
+      100% {
+        transform: translateY(-50%) translateX(0) rotateY(0) scale(1);
+        opacity: 1;
+      }
+    }
+    @keyframes curlOpen {
+      0% {
+        transform: translateY(-50%) translateX(100px) rotateX(45deg) rotateZ(-10deg);
+        opacity: 0;
+      }
+      100% {
+        transform: translateY(-50%) translateX(0) rotateX(0) rotateZ(0);
+        opacity: 1;
+      }
+    }
+    .sidebar-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sidebar-toggle {
+      position: fixed;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      background: linear-gradient(145deg, var(--primary3-color), #5a1a9a);
+      color: white;
+      width: 35px;
+      height: 35px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50% 0 0 50%;
+      cursor: pointer;
+      z-index: 1001;
+      box-shadow: -3px 0 10px rgba(0,0,0,0.4);
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      transform-style: preserve-3d;
+      perspective: 100px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .sidebar-toggle:hover {
+      background: linear-gradient(145deg, var(--primary-hover), #0d5e99);
+      width: 38px;
+      box-shadow: -4px 0 12px rgba(0,0,0,0.5);
+      transform: translateY(-50%) scale(1.1);
+    }
+    .sidebar-toggle i {
+      transition: transform 0.3s;
+      font-size: 1.2rem;
+    }
+    .sidebar-btn {
+      position: relative;
+      overflow: hidden;
+      background: var(--sidebar-btn-bg);
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 
+        0 0 8px rgba(0,0,0,0.2),
+        0 0 15px var(--accent-color);
+      padding: 6px 4px;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-height: 55px;
+      text-align: center;
+      animation: pulseGlow 6s ease-in-out infinite;
+      font-size: 0.8rem;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 8px rgba(0,0,0,0.2), 0 0 15px var(--accent-color); }
+      50% { box-shadow: 0 0 8px rgba(0,0,0,0.2), 0 0 25px var(--accent-color); }
+    }
+    .sidebar-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px var(--accent-color), 0 0 25px var(--accent-color);
+      background: rgba(75, 0, 130, 0.35);
+    }
+    .sidebar-btn:active {
+      transform: scale(0.94) rotateX(3deg);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 10px var(--accent-color);
+      transition: all 0.1s;
+    }
+    .sidebar-btn i {
+      font-size: 1.1rem;
+      transition: transform 0.3s;
+      text-shadow: 0 0 8px rgba(255,255,255,0.5);
+    }
+    .sidebar-btn:hover i {
+      transform: scale(1.2);
+    }
+    .sidebar-btn span {
+      font-size: 0.7rem;
+    }
+    .sidebar-btn::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: rgba(0,0,0,0.85);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      pointer-events: none;
+      z-index: 1002;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      min-width: 120px;
+      text-align: center;
+    }
+    .sidebar-btn:hover::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    @keyframes vibrate {
+      0% { transform: translateX(0) rotate(0.5deg); }
+      20% { transform: translateX(-1px) rotate(-0.5deg); }
+      40% { transform: translateX(1px) rotate(0.5deg); }
+      60% { transform: translateX(-1px) rotate(-0.5deg); }
+      80% { transform: translateX(1px) rotate(0.5deg); }
+      100% { transform: translateX(0) rotate(0); }
+    }
+    .vibrate {
+      animation: vibrate 0.3s linear;
+    }
+    @keyframes pulse-glow {
+      0% { box-shadow: 0 0 0 0 var(--accent-color); }
+      70% { box-shadow: 0 0 0 10px rgba(100, 149, 237, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(100, 149, 237, 0); }
+    }
+    .pulse-glow {
+      animation: pulse-glow 1.5s infinite;
+    }
+    .glow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(
+        circle at center,
+        rgba(255,255,255,0.4) 0%,
+        rgba(255,255,255,0) 70%
+      );
+      border-radius: 10px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 0;
+    }
+    .sidebar-btn:hover .glow {
+      opacity: 0.6;
+    }
+    .table-container {
+      width: 100%;
+      overflow: auto;
+      margin-top: 25px;
+      max-height: 300px;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.9rem;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    table th {
+      background: linear-gradient(to bottom, #2c3e50, #1a2a3a);
+      color: white;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-radius: 20px;
+    }
+    table tr:first-child th:first-child {
+      border-top-right-radius: 20px;
+    }
+    table tr:first-child th:last-child {
+      border-top-left-radius: 20px;
+    }
+    table tr:last-child td:first-child {
+      border-bottom-right-radius: 12px;
+    }
+    table tr:last-child td:last-child {
+      border-bottom-left-radius: 12px;
+    }
+    table tr:nth-child(even) {
+      background-color: #f8f9fa;
+    }
+    [data-theme="dark"] table tr:nth-child(even) {
+      background-color: #2a2a2a;
+    }
+    table tr:hover {
+      background-color: #e9f7fe;
+    }
+    [data-theme="dark"] table tr:hover {
+      background-color: #2c3e50;
+    }
+    .selected-row {
+      box-shadow: 0 0 0 2px var(--highlight-border-light);
+    }
+    [data-theme="dark"] .selected-row {
+      box-shadow: 0 0 0 2px var(--highlight-border-dark);
+    }
+    .delete-row {
+      box-shadow: 0 0 0 2px var(--delete-border-light);
+    }
+    [data-theme="dark"] .delete-row {
+      box-shadow: 0 0 0 2px var(--delete-border-dark);
+    }
+    .alert {
+      padding: 12px;
+      background-color: #d1f0ff;
+      color: var(--primary-color);
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--primary-color);
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      z-index: 1000;
+      animation: fadeInOut 3s forwards;
+      max-width: 90%;
+      box-sizing: border-box;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    @keyframes fadeInOut {
+      0% { opacity: 0; top: 60px; }
+      10% { opacity: 1; top: 80px; }
+      90% { opacity: 1; top: 80px; }
+      100% { opacity: 0; top: 60px; visibility: hidden; }
+    }
+    .error {
+      background-color: #ffebee;
+      color: var(--error);
+      border-left: 4px solid var(--error);
+    }
+    .success {
+      background-color: #e8f5e9;
+      color: var(--success);
+      border-left: 4px solid var(--success);
+    }
+    tr.selected {
+      background-color: #e3f2fd !important;
+      box-shadow: var(--blue-glow);
+      position: relative;
+      z-index: 10;
+    }
+    [data-theme="dark"] tr.selected {
+      background-color: #1a3a5f !important;
+      box-shadow: var(--blue-glow);
+    }
+    .form-label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #555;
+      font-size: 0.9rem;
+    }
+    [data-theme="dark"] .form-label {
+      color: #bbb;
+    }
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    [data-theme="dark"] ::-webkit-scrollbar-track {
+      background: #2a2a2a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+    .gold-text {
+      color: var(--gold);
+      text-shadow: var(--gold-glow);
+      font-weight: bold;
+    }
+    .ripple {
+      position: relative;
+      overflow: hidden;
+      transform: translate3d(0, 0, 0);
+    }
+    .ripple:after {
+      content: "";
+      display: block;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+      background-repeat: no-repeat;
+      background-position: 50%;
+      transform: scale(10, 10);
+      opacity: 0;
+      transition: transform .5s, opacity 1s;
+    }
+    .ripple:active:after {
+      transform: scale(0, 0);
+      opacity: .3;
+      transition: 0s;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+      backdrop-filter: blur(5px);
+    }
+    .modal-content {
+      background: var(--card-color);
+      border-radius: 16px;
+      padding: 20px;
+      width: 90%;
+      max-width: 450px;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+      text-align: center;
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: 1px solid rgba(255,255,255,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    .modal-content::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(to right, var(--primary-color), var(--primary3-color));
+      border-radius: 16px 16px 0 0;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .modal-title {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      color: var(--primary-color);
+      font-weight: bold;
+      text-shadow: 0 2px 3px rgba(0,0,0,0.1);
+    }
+    .modal-input-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 15px;
+      justify-content: center;
+    }
+    .modal-input {
+      flex: 1;
+      min-width: 100px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 0.9rem;
+      background: var(--card-color);
+      color: var(--text-color);
+      transition: all 0.3s;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    .modal-input:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 8px rgba(0,122,204,0.3);
+    }
+    .modal-btn {
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: bold;
+      margin: 0 5px;
+      position: relative;
+      overflow: hidden;
+    }
+    .modal-btn-primary {
+      background: linear-gradient(to right, var(--primary-color), var(--primary3-color));
+      color: white;
+    }
+    .modal-btn-primary:hover {
+      background: linear-gradient(to right, var(--primary-hover), var(--primary2-hover));
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .modal-btn-cancel {
+      background: #f0f0f0;
+      color: #333;
+    }
+    .modal-btn-cancel:hover {
+      background: #e0e0e0;
+    }
+    .row-highlight {
+      animation: highlightRow 1.5s ease;
+      position: relative;
+      z-index: 100;
+    }
+    @keyframes highlightRow {
+      0% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(255, 215, 0, 0.5);
+      }
+      50% { 
+        transform: scale(1.05);
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+      }
+      100% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+      }
+    }
+    .row-update {
+      animation: updateRow 2s ease;
+      position: relative;
+      z-index: 100;
+    }
+    @keyframes updateRow {
+      0% { 
+        background-color: #e3f2fd;
+        box-shadow: var(--blue-glow);
+      }
+      50% { 
+        background-color: #c8e6c9;
+        box-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
+      }
+      100% { 
+        background-color: inherit;
+        box-shadow: none;
+      }
+    }
+    .row-delete {
+      animation: deleteRow 1.5s forwards;
+      position: relative;
+      z-index: 100;
+    }
+    @keyframes deleteRow {
+      0% { 
+        opacity: 1;
+        transform: scale(1);
+        box-shadow: var(--red-glow);
+      }
+      50% { 
+        opacity: 0.7;
+        transform: scale(0.95);
+        box-shadow: 0 0 30px rgba(244, 67, 54, 0.8);
+      }
+      100% { 
+        opacity: 0;
+        transform: scale(0.9);
+        height: 0;
+        padding: 0;
+        margin: 0;
+        border: none;
+      }
+    }
+    .glow-effect::before {
+      content: "";
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      right: -10px;
+      bottom: -10px;
+      border-radius: 12px;
+      z-index: -1;
+      animation: pulse 2s infinite;
+    }
+    .glow-query::before {
+      background: rgba(255, 215, 0, 0.2);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    }
+    .glow-update::before {
+      background: rgba(0, 122, 204, 0.2);
+      box-shadow: 0 0 20px rgba(0, 122, 204, 0.5);
+    }
+    .glow-delete::before {
+      background: rgba(244, 67, 54, 0.2);
+      box-shadow: 0 0 20px rgba(244, 67, 54, 0.5);
+    }
+    @keyframes pulse {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
+    .confirmation-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--success);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      z-index: 2000;
+      animation: fadeOut 2s forwards;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    @keyframes fadeOut {
+      0% { opacity: 1; top: 50%; }
+      70% { opacity: 1; top: 50%; }
+      100% { opacity: 0; top: 45%; }
+    }
+    .row-tooltip {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--card-color);
+      border-radius: 16px;
+      padding: 15px;
+      width: 90%;
+      max-width: 450px;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+      z-index: 3000;
+      display: none;
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      border: 1px solid rgba(255,255,255,0.1);
+      overflow: hidden;
+    }
+    .row-tooltip::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(to right, var(--primary-color), var(--primary3-color));
+      border-radius: 16px 16px 0 0;
+    }
+    .row-tooltip-content {
+      text-align: center;
+    }
+    .row-tooltip-title {
+      font-size: 1.3rem;
+      margin-bottom: 15px;
+      color: var(--primary-color);
+      font-weight: bold;
+    }
+    .row-tooltip-data {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+    .row-tooltip-item {
+      background: rgba(0,0,0,0.05);
+      padding: 10px;
+      border-radius: 8px;
+      border-left: 3px solid var(--primary-color);
+    }
+    .row-tooltip-label {
+      font-weight: bold;
+      color: var(--primary-color);
+      margin-bottom: 5px;
+      font-size: 0.85rem;
+    }
+    .row-tooltip-value {
+      font-size: 0.95rem;
+    }
+    .row-tooltip-close {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: var(--error);
+      color: white;
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      font-size: 0.9rem;
+    }
+    .mode-toggle-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      margin-left: 10px;
+    }
+    .mode-toggle-btn i {
+      font-size: 1.5rem;
+      color: var(--gold);
+      transition: transform 0.5s;
+    }
+    .mode-toggle-btn:hover {
+      transform: scale(1.1);
+      background: rgba(0,0,0,0.1);
+    }
+    .top-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .top-title h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: white;
+      text-shadow: 0 0 10px rgba(255,255,255,0.5);
+    }
+    .field-group {
+      position: relative;
+      margin-bottom: 15px;
+    }
+    .field-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #777;
+      pointer-events: none;
+    }
+    .row-delete-tooltip {
+      position: absolute;
+      background: var(--card-color);
+      border-radius: 20px;
+      padding: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      z-index: 2000;
+      display: none;
+      text-align: center;
+      min-width: 300px;
+      border: 2px solid var(--error);
+      transform: translateY(-100%) translateX(-50%);
+      left: 50%;
+      top: -10px;
+    }
+    .row-delete-tooltip::before {
+      content: "";
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 10px 10px 0;
+      border-style: solid;
+      border-color: var(--card-color) transparent transparent;
+    }
+    [data-theme="dark"] .row-delete-tooltip {
+      background: #2a2a2a;
+      border: 2px solid var(--delete-border-dark);
+    }
+    .delete-options {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .delete-option-btn {
+      padding: 8px 15px;
+      border-radius: 20px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+      min-width: 100px;
+    }
+    .delete-permanent {
+      background: linear-gradient(to right, #f44336, #d32f2f);
+      color: white;
+    }
+    .delete-archive {
+      background: linear-gradient(to right, #ff9800, #f57c00);
+      color: white;
+    }
+    .delete-cancel {
+      background: linear-gradient(to right, #9e9e9e, #757575);
+      color: white;
+    }
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 60px;
+        padding: 6px;
+      }
+      .sidebar-btn {
+        padding: 6px 3px;
+        min-height: 55px;
+        font-size: 0.75rem;
+      }
+      .sidebar-toggle {
+        width: 32px;
+        height: 32px;
+      }
+      .sidebar-btn::after {
+        font-size: 0.7rem;
+        padding: 4px 6px;
+        bottom: calc(100% + 8px);
+      }
+      .modal-content, .row-tooltip {
+        padding: 12px;
+        max-width: 95%;
+      }
+      .top-bar {
+        height: 60px;
+        padding: 5px 10px;
+      }
+      .top-title h2 {
+        font-size: 1.3rem;
+      }
+      .barcode-container {
+        width: 100%;
+        height: 200px;
+        margin-bottom: 15px;
+      }
+      .product-table th, .product-table td {
+        padding: 6px;
+        font-size: 0.8rem;
+      }
+      .receipt-preview {
+        font-size: 0.9rem;
+        padding: 10px;
+      }
+      .invoice-summary input {
+        padding: 8px;
+        font-size: 0.9rem;
+      }
+    }
+    body.sleep-mode * {
+      animation: none !important;
+      transition: none !important;
+    }
+    body.sleep-mode .sidebar {
+      display: none;
+    }
+    body.sleep-mode .sidebar-toggle {
+      display: none;
+    }
+    .loading-indicator {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 3000;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    .spinner {
+      width: 80px;
+      height: 80px;
+      border: 8px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top: 8px solid var(--primary-color);
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .barcode-container {
+      width: 100%;
+      height: 25vh;
+      max-height: 250px;
+      margin: 0 auto;
+      border: 2px dashed var(--primary-color);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      background-color: var(--bg-color);
+    }
+    @media (max-width: 480px) {
+      .barcode-container {
+        height: 20vh;
+      }
+    }
+    .flash-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      z-index: 100;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .scan-toggle-btn {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      z-index: 100;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .product-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    .product-table th {
+      background: linear-gradient(to bottom, var(--primary-color), var(--primary-hover));
+      color: white;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .product-table tr:nth-child(even) {
+      background-color: rgba(0,0,0,0.05);
+    }
+    .product-table tr:hover {
+      background-color: rgba(0,122,204,0.1);
+    }
+    .quantity-input {
+      width: 60px;
+      text-align: center;
+      border: 1px solid var(--input-border-light);
+      border-radius: 6px;
+      padding: 5px;
+    }
+    .receipt-preview {
+      background-color: var(--card-color);
+      border: 1px solid var(--input-border-light);
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      border-radius: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .invoice-summary input {
+      background-color: var(--card-color);
+      border: 1px solid var(--input-border-light);
+      color: var(--text-color);
+      text-align: right;
+      font-weight: bold;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .action-buttons button {
+      flex: 1;
+    }
+    .btn {
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background: var(--primary-color);
+      color: white;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    .btn-danger {
+      background: var(--error);
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #d32f2f;
+    }
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+    .btn-success:hover {
+      background: #388E3C;
+    }
+    .btn-info {
+      background: #17a2b8;
+      color: white;
+    }
+    .btn-info:hover {
+      background: #138496;
+    }
+    .w-100 {
+      width: 100%;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .text-muted {
+      color: #6c757d;
+    }
+    @media (max-width: 480px) {
+      .product-table th, .product-table td {
+        padding: 4px;
+        font-size: 0.7rem;
+      }
+      .quantity-input {
+        width: 50px;
+      }
+      .receipt-preview {
+        font-size: 0.8rem;
+        padding: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+<!-- شريط المعلومات العلوي -->
+<div class="top-bar">
+  <div class="top-title">
+    <button class="btn btn-primary" id="backBtn" style="margin-left: 10px;">
+      <i class="fas fa-arrow-left"></i> رجوع
+    </button>
+    <h2>مبيعات بالباركود</h2>
+  </div>
+  <button id="darkModeToggle" class="mode-toggle-btn">
+    <i class="fas fa-moon"></i>
+  </button>
+</div>
+
+<!-- القائمة الجانبية المحسّنة -->
+<div class="sidebar-toggle" id="sidebarToggle">
+  <i class="fas fa-bars"></i>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-content">
+    <button class="sidebar-btn ripple" data-tooltip="بدء عملية بيع جديدة" onclick="handleButtonClick('newSale')">
+      <div class="glow"></div>
+      <i class="fas fa-cash-register"></i>
+      <span>🛒 جديد</span>
+    </button>
+    <button class="sidebar-btn ripple" data-tooltip="إرجاع منتج" onclick="handleButtonClick('return')">
+      <div class="glow"></div>
+      <i class="fas fa-undo"></i>
+      <span>🔄 مرتجع</span>
+    </button>
+    <button class="sidebar-btn ripple" data-tooltip="تسجيل منتج تالف" onclick="handleButtonClick('damaged')">
+      <div class="glow"></div>
+      <i class="fas fa-trash"></i>
+      <span>🗑 تالف</span>
+    </button>
+    <button class="sidebar-btn ripple" data-tooltip="بحث عن منتج" onclick="handleButtonClick('search')">
+      <div class="glow"></div>
+      <i class="fas fa-search"></i>
+      <span>🔍 بحث</span>
+    </button>
+    <button class="sidebar-btn ripple" data-tooltip="عرض تقارير المبيعات" onclick="handleButtonClick('reports')">
+      <div class="glow"></div>
+      <i class="fas fa-chart-line"></i>
+      <span>📊 تقارير</span>
+    </button>
+    <button class="sidebar-btn ripple" data-tooltip="الإعدادات" onclick="handleButtonClick('settings')">
+      <div class="glow"></div>
+      <i class="fas fa-cog"></i>
+      <span>⚙ إعدادات</span>
+    </button>
+  </div>
+</div>
+
+<!-- مؤشر تحميل -->
+<div class="loading-indicator" id="loadingIndicator">
+  <div class="spinner"></div>
+</div>
+
+<!-- المحتوى الرئيسي -->
+<div class="container">
+  <div class="header"></div>
+  <div id="messageContainer"></div>
+
+  <!-- معلومات الفاتورة -->
+  <div class="form-grid">
+    <div class="horizontal-row">
+      <div class="field-group">
+        <label class="form-label">رقم الفاتورة</label>
+        <input type="text" id="invoiceNumber" class="form-control" readonly>
+        <i class="fas fa-file-invoice field-icon"></i>
+      </div>
+      <div class="field-group">
+        <label class="form-label">طريقة الدفع</label>
+        <select id="paymentType" class="form-control">
+          <option value="cash">نقداً</option>
+          <option value="credit">آجل</option>
+        </select>
+        <i class="fas fa-money-bill-wave field-icon"></i>
+      </div>
+    </div>
+    
+    <div id="customerInfoRow" style="display: none;">
+      <div class="horizontal-row">
+        <div class="field-group">
+          <label class="form-label">رقم العميل</label>
+          <div class="input-group">
+            <input type="text" id="customerId" class="form-control">
+            <button class="btn btn-primary" id="searchCustomerBtn">بحث</button>
+          </div>
+          <i class="fas fa-user-tag field-icon"></i>
+        </div>
+        <div class="field-group">
+          <label class="form-label">اسم العميل</label>
+          <input type="text" id="customerName" class="form-control" readonly>
+          <i class="fas fa-user field-icon"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- مسح الباركود -->
+  <div class="form-grid">
+    <h3 class="gold-text">مسح الباركود</h3>
+    <div class="barcode-container" id="barcodeScanner">
+      <button class="flash-btn" id="toggleFlashBtn">
+        <i class="fas fa-bolt"></i>
+      </button>
+      <button class="scan-toggle-btn" id="toggleScanBtn">
+        <i class="fas fa-power-off"></i>
+      </button>
+    </div>
+    <p class="text-center text-muted">قم بتوجيه كاميرا الجهاز نحو باركود المنتج</p>
+    
+    <div class="field-group">
+      <label class="form-label">إدخال يدوي</label>
+      <div class="input-group">
+        <input type="text" id="manualBarcodeInput" class="form-control" placeholder="أدخل رمز الباركود يدوياً">
+        <button class="btn btn-primary" id="addManualBarcodeBtn">إضافة</button>
+      </div>
+    </div>
+    
+    <div class="alert alert-info">
+      <p>سيتم إضافة المنتجات تلقائياً عند مسح الباركود</p>
+      <p>لإيقاف المسح، اضغط على زر "إيقاف المسح"</p>
+    </div>
+    
+    <button class="btn btn-danger w-100" id="stopScanBtn" style="display: none;">إيقاف المسح</button>
+  </div>
+
+  <!-- قائمة المنتجات المضافة -->
+  <div class="form-grid">
+    <h3 class="gold-text">المنتجات المضافة</h3>
+    <div class="table-container">
+      <table class="product-table" id="productsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>المنتج</th>
+            <th>السعر</th>
+            <th>الكمية</th>
+            <th>المجموع</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody id="productsTableBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ملخص الفاتورة -->
+  <div class="form-grid">
+    <h3 class="gold-text">ملخص الفاتورة</h3>
+    <div class="horizontal-row">
+      <div class="field-group">
+        <label class="form-label">الإجمالي قبل الضريبة</label>
+        <input type="text" id="subtotal" class="form-control invoice-summary" readonly>
+      </div>
+      <div class="field-group">
+        <label class="form-label">الضريبة</label>
+        <input type="text" id="taxAmount" class="form-control invoice-summary" readonly>
+      </div>
+    </div>
+    
+    <div class="horizontal-row">
+      <div class="field-group">
+        <label class="form-label">الإجمالي النهائي</label>
+        <input type="text" id="totalAmount" class="form-control invoice-summary" readonly>
+      </div>
+      <div class="field-group">
+        <label class="form-label">المبلغ المدفوع</label>
+        <input type="number" id="amountPaid" class="form-control invoice-summary">
+      </div>
+    </div>
+    
+    <div class="field-group">
+      <label class="form-label">الباقي</label>
+      <input type="text" id="remainingAmount" class="form-control invoice-summary" readonly>
+    </div>
+    
+    <div class="action-buttons">
+      <button class="btn btn-success" id="completeSaleBtn">ترحيل الفاتورة</button>
+      <button class="btn btn-primary" id="printReceiptBtn">طباعة</button>
+      <button class="btn btn-info" id="sendWhatsAppBtn">واتساب</button>
+    </div>
+  </div>
+</div>
+
+<!-- نماذج منبثقة -->
+<div id="customerSearchModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-title">بحث عن عميل</div>
+    <div class="modal-input-group">
+      <input type="text" id="customerSearchInput" class="modal-input" placeholder="ابحث برقم العميل أو الاسم">
+    </div>
+    <div class="table-container" style="max-height: 300px; margin: 15px 0;">
+      <table class="product-table">
+        <thead>
+          <tr>
+            <th>رقم العميل</th>
+            <th>الاسم</th>
+            <th>اختيار</th>
+          </tr>
+        </thead>
+        <tbody id="customerSearchResults">
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top: 15px;">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal('customerSearchModal')">إلغاء</button>
+      <button class="modal-btn modal-btn-primary" onclick="addNewCustomer()">عميل جديد</button>
+    </div>
+  </div>
+</div>
+
+<div id="newCustomerModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-title">إضافة عميل جديد</div>
+    <div class="form-grid">
+      <div class="field-group">
+        <label class="form-label">الاسم الكامل</label>
+        <input type="text" id="newCustomerName" class="modal-input">
+      </div>
+      <div class="field-group">
+        <label class="form-label">الهاتف</label>
+        <input type="text" id="newCustomerPhone" class="modal-input">
+      </div>
+      <div class="field-group">
+        <label class="form-label">البريد الإلكتروني</label>
+        <input type="email" id="newCustomerEmail" class="modal-input">
+      </div>
+      <div class="field-group">
+        <label class="form-label">الحد الائتماني</label>
+        <input type="number" id="newCustomerCreditLimit" class="modal-input" value="0">
+      </div>
+    </div>
+    <div style="margin-top: 15px;">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal('newCustomerModal')">إلغاء</button>
+      <button class="modal-btn modal-btn-primary" id="saveNewCustomerBtn">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div class="row-tooltip" id="rowTooltip">
+  <div class="row-tooltip-close" onclick="closeRowTooltip()">✕</div>
+  <div class="row-tooltip-content">
+    <div class="row-tooltip-title">تفاصيل المنتج</div>
+    <div class="row-tooltip-data" id="rowTooltipData">
+    </div>
+    <button class="modal-btn modal-btn-primary" onclick="closeRowTooltip()" style="margin-top: 10px;">موافق</button>
+  </div>
+</div>
+
+<!-- نماذج إضافية لوظائف القائمة الجانبية -->
+<div id="returnModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-title">إرجاع منتج</div>
+    <div class="form-grid">
+      <div class="field-group">
+        <label class="form-label">رقم الفاتورة</label>
+        <input type="text" id="returnInvoiceNumber" class="modal-input">
+      </div>
+      <div class="field-group">
+        <label class="form-label">باركود المنتج</label>
+        <input type="text" id="returnBarcode" class="modal-input">
+      </div>
+      <div class="field-group">
+        <label class="form-label">الكمية المراد إرجاعها</label>
+        <input type="number" id="returnQuantity" class="modal-input" min="1">
+      </div>
+      <div class="field-group">
+        <label class="form-label">سبب الإرجاع</label>
+        <textarea id="returnReason" class="modal-input" rows="3"></textarea>
+      </div>
+    </div>
+    <div style="margin-top: 15px;">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal('returnModal')">إلغاء</button>
+      <button class="modal-btn modal-btn-primary" onclick="processReturn()">تأكيد الإرجاع</button>
+    </div>
+  </div>
+</div>
+
+<div id="damagedProductsModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-title">تسجيل منتج تالف</div>
+    <div class="form-grid">
+      <div class="field-group">
+        <label class="form-label">باركود المنتج</label>
+        <input type="text" id="damagedBarcode" class="modal-input">
+      </div>
+      <div class="field-group">
+        <label class="form-label">الكمية التالفة</label>
+        <input type="number" id="damagedQuantity" class="modal-input" min="1">
+      </div>
+      <div class="field-group">
+        <label class="form-label">سبب التلف</label>
+        <select id="damageReason" class="modal-input">
+          <option value="expired">منتهي الصلاحية</option>
+          <option value="broken">مكسور</option>
+          <option value="damaged">تالف</option>
+          <option value="other">أخرى</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="form-label">ملاحظات إضافية</label>
+        <textarea id="damageNotes" class="modal-input" rows="2"></textarea>
+      </div>
+    </div>
+    <div style="margin-top: 15px;">
+      <button class="modal-btn modal-btn-cancel" onclick="closeModal('damagedProductsModal')">إلغاء</button>
+      <button class="modal-btn modal-btn-primary" onclick="recordDamagedProduct()">تسجيل</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let inactivityTimer;
+let sleepModeTimer;
+const INACTIVITY_TIMEOUT = 10000;
+const SLEEP_MODE_TIMEOUT = 20000;
+let currentRowEffect = '';
+let isSleepMode = false;
+let csrfToken = '';
+let html5QrcodeScanner;
+let isScanning = false;
+let flashEnabled = false;
+let scannerActive = true;
+
+// ===== وظيفة التبديل بين الوضع الليلي والنهاري =====
+function toggleMode() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  localStorage.setItem('theme', isDark ? 'light' : 'dark');
+  const icon = document.querySelector('#darkModeToggle i');
+  icon.className = isDark ? 'fas fa-moon' : 'fas fa-sun';
+}
+
+// ===== تهيئة إعدادات الوضع الليلي =====
+function loadThemeSettings() {
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.querySelector('#darkModeToggle i').className = 'fas fa-sun';
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.querySelector('#darkModeToggle i').className = 'fas fa-moon';
+  }
+}
+
+// ===== جلب رمز الحماية CSRF =====
+function fetchCsrfToken() {
+  fetch('/barcode_sales/get-csrf-token')
+    .then(response => response.json())
+    .then(data => {
+      if (data.csrf_token) {
+        csrfToken = data.csrf_token;
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching CSRF token:', error);
+      showMessage('حدث خطأ في جلب رمز الحماية', 'error');
+    });
+}
+
+// ===== تهيئة ماسح الباركود =====
+function initBarcodeScanner() {
+  if (typeof Html5QrcodeScanner === 'undefined') {
+    showMessage('مكتبة مسح الباركود غير متوفرة', 'error');
+    return;
+  }
+  
+  const config = { 
+    fps: 10, 
+    qrbox: { width: 250, height: 250 },
+    formatsToSupport: [Html5QrcodeSupportedFormats.EAN_13]
+  };
+  
+  if (!isScanning && scannerActive) {
+    html5QrcodeScanner = new Html5QrcodeScanner("barcodeScanner", config, false);
+    html5QrcodeScanner.render(onScanSuccess, onScanError)
+      .then(() => {
+        isScanning = true;
+        document.getElementById('stopScanBtn').style.display = 'block';
+        document.getElementById('toggleScanBtn').innerHTML = '<i class="fas fa-power-off"></i>';
+        showMessage('تم تشغيل الماسح الضوئي بنجاح', 'success');
+      })
+      .catch(err => {
+        console.error("فشل في تشغيل الماسح:", err);
+        showMessage('فشل في تشغيل كاميرا الجهاز: ' + err.message, 'error');
+      });
+  }
+}
+
+// ===== تبديل حالة الماسح الضوئي =====
+function toggleScanner() {
+  scannerActive = !scannerActive;
+  if (scannerActive) {
+    initBarcodeScanner();
+  } else {
+    stopScanner();
+    showMessage('تم إيقاف الماسح الضوئي', 'warning');
+  }
+}
+
+// ===== تبديل حالة الفلاش =====
+function toggleFlash() {
+  if (!html5QrcodeScanner) return;
+  
+  flashEnabled = !flashEnabled;
+  try {
+    html5QrcodeScanner.applyVideoConstraints({
+      advanced: [{torch: flashEnabled}]
+    });
+    document.getElementById('toggleFlashBtn').innerHTML = flashEnabled ? 
+      '<i class="fas fa-bolt" style="color: var(--gold);"></i>' : 
+      '<i class="fas fa-bolt"></i>';
+    showMessage(flashEnabled ? 'تم تشغيل الفلاش' : 'تم إيقاف الفلاش', 'info');
+  } catch (error) {
+    console.error('Error toggling flash:', error);
+    showMessage('هذا الجهاز لا يدعم فلاش الكاميرا', 'error');
+    flashEnabled = false;
+  }
+}
+
+// ===== معالجة مسح الباركود بنجاح =====
+function onScanSuccess(decodedText) {
+  addProductByBarcode(decodedText);
+}
+
+// ===== معالجة أخطاء المسح =====
+function onScanError(error) {
+  console.error(`خطأ في المسح: ${error}`);
+  showMessage('حدث خطأ أثناء مسح الباركود', 'error');
+}
+
+// ===== إيقاف الماسح الضوئي =====
+function stopScanner() {
+  if (isScanning && html5QrcodeScanner) {
+    html5QrcodeScanner.clear().catch(error => console.error("فشل إيقاف الماسح:", error));
+    isScanning = false;
+    document.getElementById('stopScanBtn').style.display = 'none';
+    document.getElementById('toggleScanBtn').innerHTML = '<i class="fas fa-power-off"></i>';
+    showMessage('تم إيقاف الماسح الضوئي', 'warning');
+  }
+}
+
+// ===== إضافة منتج بواسطة الباركود =====
+function addProductByBarcode(barcode) {
+  showLoading(true);
+  fetch(`/barcode_sales/api/products/barcode/${barcode}`, {
+    headers: { 'X-CSRFToken': csrfToken }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      addProductToTable(data.product);
+      updateInvoiceSummary();
+    } else {
+      showMessage(data.message || 'لم يتم العثور على المنتج', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showMessage('حدث خطأ أثناء جلب بيانات المنتج', 'error');
+  })
+  .finally(() => showLoading(false));
+}
+
+// ===== إضافة منتج يدويًا =====
+function addProductManually() {
+  const barcode = document.getElementById('manualBarcodeInput').value.trim();
+  if (!barcode) {
+    showMessage('يرجى إدخال باركود المنتج', 'error');
+    return;
+  }
+  
+  addProductByBarcode(barcode);
+  document.getElementById('manualBarcodeInput').value = '';
+}
+
+// ===== إضافة المنتج إلى الجدول =====
+function addProductToTable(product) {
+  const tbody = document.getElementById('productsTableBody');
+  const existingRow = document.querySelector(`tr[data-product-id="${product.id}"]`);
+  
+  if (existingRow) {
+    const qtyInput = existingRow.querySelector('.quantity-input');
+    qtyInput.value = parseInt(qtyInput.value) + 1;
+    updateProductQuantity(existingRow);
+    existingRow.classList.add('row-highlight');
+    setTimeout(() => existingRow.classList.remove('row-highlight'), 1000);
+    return;
+  }
+  
+  const row = document.createElement('tr');
+  row.setAttribute('data-product-id', product.id);
+  row.innerHTML = `
+    <td>${tbody.children.length + 1}</td>
+    <td>${product.name}</td>
+    <td>${product.price.toFixed(2)}</td>
+    <td><input type="number" class="form-control quantity-input" value="1" min="1"></td>
+    <td class="product-total">${product.price.toFixed(2)}</td>
+    <td><button class="btn btn-sm btn-danger remove-product-btn">حذف</button></td>
+  `;
+  tbody.appendChild(row);
+  row.querySelector('.quantity-input').addEventListener('change', () => updateProductQuantity(row));
+  row.querySelector('.remove-product-btn').addEventListener('click', () => removeProduct(row));
+  row.classList.add('row-highlight');
+  setTimeout(() => row.classList.remove('row-highlight'), 1000);
+}
+
+// ===== تحديث كمية المنتج =====
+function updateProductQuantity(row) {
+  const qty = parseInt(row.querySelector('.quantity-input').value) || 1;
+  const price = parseFloat(row.querySelector('td:nth-child(3)').textContent);
+  const total = price * qty;
+  row.querySelector('.product-total').textContent = total.toFixed(2);
+  updateInvoiceSummary();
+}
+
+// ===== حذف منتج من الجدول =====
+function removeProduct(row) {
+  row.classList.add('row-delete');
+  setTimeout(() => {
+    row.remove();
+    updateInvoiceSummary();
+    document.querySelectorAll('#productsTableBody tr').forEach((row, index) => {
+      row.cells[0].textContent = index + 1;
+    });
+  }, 1500);
+}
+
+// ===== تحديث ملخص الفاتورة =====
+function updateInvoiceSummary() {
+  let subtotal = 0;
+  document.querySelectorAll('#productsTableBody tr').forEach(row => {
+    subtotal += parseFloat(row.querySelector('.product-total').textContent);
+  });
+  
+  const tax = subtotal * 0.15;
+  const total = subtotal + tax;
+  
+  document.getElementById('subtotal').value = subtotal.toFixed(2);
+  document.getElementById('taxAmount').value = tax.toFixed(2);
+  document.getElementById('totalAmount').value = total.toFixed(2);
+  
+  updateRemainingAmount();
+}
+
+// ===== تحديث المبلغ المتبقي =====
+function updateRemainingAmount() {
+  const total = parseFloat(document.getElementById('totalAmount').value) || 0;
+  const paid = parseFloat(document.getElementById('amountPaid').value) || 0;
+  document.getElementById('remainingAmount').value = (total - paid).toFixed(2);
+}
+
+// ===== توليد رقم فاتورة جديد =====
+function generateInvoiceNumber() {
+  fetch('/barcode_sales/get-next-invoice-number')
+    .then(response => response.json())
+    .then(data => {
+      if (data.next_invoice_number) {
+        document.getElementById('invoiceNumber').value = data.next_invoice_number;
+      } else {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = (now.getMonth() + 1).toString().padStart(2, '0');
+        const day = now.getDate().toString().padStart(2, '0');
+        const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        document.getElementById('invoiceNumber').value = `INV-${year}${month}${day}-${random}`;
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching invoice number:', error);
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const day = now.getDate().toString().padStart(2, '0');
+      const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      document.getElementById('invoiceNumber').value = `INV-${year}${month}${day}-${random}`;
+    });
+}
+
+// ===== إظهار مؤشر التحميل =====
+function showLoading(show) {
+  document.getElementById('loadingIndicator').style.display = show ? 'flex' : 'none';
+}
+
+// ===== عرض رسائل التنبيه =====
+function showMessage(message, type) {
+  const container = document.getElementById('messageContainer');
+  const alertDiv = document.createElement('div');
+  alertDiv.className = `alert ${type}`;
+  alertDiv.textContent = message;
+  container.appendChild(alertDiv);
+  
+  setTimeout(() => {
+    alertDiv.remove();
+  }, 3000);
+}
+
+// ===== إعادة تعيين النموذج =====
+function resetForm() {
+  generateInvoiceNumber();
+  document.getElementById('productsTableBody').innerHTML = '';
+  document.getElementById('customerName').value = '';
+  document.getElementById('customerId').value = '';
+  document.getElementById('subtotal').value = '0.00';
+  document.getElementById('taxAmount').value = '0.00';
+  document.getElementById('totalAmount').value = '0.00';
+  document.getElementById('amountPaid').value = '';
+  document.getElementById('remainingAmount').value = '0.00';
+  
+  if (!isScanning && scannerActive) initBarcodeScanner();
+}
+
+// ===== معالجة أزرار القائمة الجانبية =====
+function handleButtonClick(action) {
+  switch(action) {
+    case 'newSale': 
+      resetForm();
+      showMessage('تم بدء عملية بيع جديدة', 'success');
+      break;
+    case 'return': 
+      openReturnModal();
+      break;
+    case 'damaged': 
+      openDamagedProductsModal();
+      break;
+    case 'search': 
+      openSearchModal();
+      break;
+    case 'reports': 
+      openReportsModal();
+      break;
+    case 'settings': 
+      openSettingsModal();
+      break;
+  }
+}
+
+// ===== فتح نموذج الإرجاع =====
+function openReturnModal() {
+  document.getElementById('returnModal').style.display = 'flex';
+}
+
+// ===== فتح نموذج المنتجات التالفة =====
+function openDamagedProductsModal() {
+  document.getElementById('damagedProductsModal').style.display = 'flex';
+}
+
+// ===== فتح نموذج البحث =====
+function openSearchModal() {
+  document.getElementById('customerSearchModal').style.display = 'flex';
+  document.getElementById('customerSearchInput').focus();
+}
+
+// ===== فتح نموذج التقارير =====
+function openReportsModal() {
+  window.location.href = '/sales_reports';
+}
+
+// ===== فتح نموذج الإعدادات =====
+function openSettingsModal() {
+  window.location.href = '/settings';
+}
+
+// ===== معالجة الإرجاع =====
+function processReturn() {
+  const invoiceNumber = document.getElementById('returnInvoiceNumber').value;
+  const barcode = document.getElementById('returnBarcode').value;
+  const quantity = document.getElementById('returnQuantity').value;
+  const reason = document.getElementById('returnReason').value;
+  
+  if (!invoiceNumber || !barcode || !quantity || !reason) {
+    showMessage('يرجى ملء جميع الحقول المطلوبة', 'error');
+    return;
+  }
+  
+  showLoading(true);
+  
+  const returnData = {
+    invoice_number: invoiceNumber,
+    barcode: barcode,
+    quantity: quantity,
+    reason: reason,
+    _csrf_token: csrfToken
+  };
+  
+  fetch('/barcode_sales/return-item', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
+    },
+    body: JSON.stringify(returnData)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showMessage('تم معالجة الإرجاع بنجاح', 'success');
+      closeModal('returnModal');
+    } else {
+      showMessage(data.message || 'حدث خطأ أثناء معالجة الإرجاع', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showMessage('حدث خطأ أثناء معالجة الإرجاع', 'error');
+  })
+  .finally(() => showLoading(false));
+}
+
+// ===== تسجيل منتج تالف =====
+function recordDamagedProduct() {
+  const barcode = document.getElementById('damagedBarcode').value;
+  const quantity = document.getElementById('damagedQuantity').value;
+  const reason = document.getElementById('damageReason').value;
+  const notes = document.getElementById('damageNotes').value;
+  
+  if (!barcode || !quantity) {
+    showMessage('يرجى إدخال الباركود والكمية', 'error');
+    return;
+  }
+  
+  showLoading(true);
+  
+  const damagedData = {
+    barcode: barcode,
+    quantity: quantity,
+    reason: reason,
+    notes: notes,
+    _csrf_token: csrfToken
+  };
+  
+  fetch('/barcode_sales/record-damaged', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
+    },
+    body: JSON.stringify(damagedData)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showMessage('تم تسجيل المنتج التالف بنجاح', 'success');
+      closeModal('damagedProductsModal');
+    } else {
+      showMessage(data.message || 'حدث خطأ أثناء التسجيل', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showMessage('حدث خطأ أثناء التسجيل', 'error');
+  })
+  .finally(() => showLoading(false));
+}
+
+// ===== إغلاق النموذج المنبثق =====
+function closeModal(modalId) {
+  document.getElementById(modalId).style.display = 'none';
+}
+
+// ===== إغلاق تلميح الصف =====
+function closeRowTooltip() {
+  document.getElementById('rowTooltip').style.display = 'none';
+}
+
+// ===== معالجة إكمال البيع =====
+function completeSale() {
+  const invoiceData = {
+    invoice_number: document.getElementById('invoiceNumber').value,
+    payment_type: document.getElementById('paymentType').value,
+    customer_id: document.getElementById('paymentType').value === 'credit' ? document.getElementById('customerId').value : null,
+    subtotal: parseFloat(document.getElementById('subtotal').value),
+    tax_amount: parseFloat(document.getElementById('taxAmount').value),
+    total_amount: parseFloat(document.getElementById('totalAmount').value),
+    amount_paid: parseFloat(document.getElementById('amountPaid').value || 0),
+    items: Array.from(document.querySelectorAll('#productsTableBody tr')).map(row => ({
+      product_id: row.getAttribute('data-product-id'),
+      quantity: parseInt(row.querySelector('.quantity-input').value),
+      unit_price: parseFloat(row.querySelector('td:nth-child(3)').textContent),
+      total: parseFloat(row.querySelector('.product-total').textContent)
+    })),
+    _csrf_token: csrfToken
+  };
+
+  if (invoiceData.items.length === 0) {
+    showMessage('يرجى إضافة منتجات قبل الترحيل', 'error');
+    return;
+  }
+
+  showLoading(true);
+  fetch('/barcode_sales/create-sale', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
+    },
+    body: JSON.stringify(invoiceData)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showMessage('تم ترحيل الفاتورة بنجاح', 'success');
+      resetForm();
+      
+      if (data.sale_id) {
+        printReceipt(data.sale_id);
+      }
+    } else {
+      showMessage(data.message || 'حدث خطأ أثناء الترحيل', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showMessage('حدث خطأ أثناء الترحيل', 'error');
+  })
+  .finally(() => showLoading(false));
+}
+
+// ===== طباعة الإيصال =====
+function printReceipt(saleId) {
+  showLoading(true);
+  fetch(`/barcode_sales/print-receipt/${saleId}`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrfToken
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showMessage('تم إرسال الفاتورة للطباعة', 'success');
+    } else {
+      showMessage(data.message || 'حدث خطأ أثناء الطباعة', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showMessage('حدث خطأ أثناء الطباعة', 'error');
+  })
+  .finally(() => showLoading(false));
+}
+
+// ===== إرسال الفاتورة عبر واتساب باستخدام Termux:API =====
+function sendWhatsAppReceipt() {
+  const saleId = document.getElementById('invoiceNumber').value;
+  if (!saleId) {
+    showMessage('لا يوجد فاتورة لإرسالها', 'error');
+    return;
+  }
+
+  showLoading(true);
+  fetch(`/barcode_sales/send-whatsapp/${saleId}`, {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrfToken
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showMessage('تم إرسال الفاتورة عبر واتساب', 'success');
+    } else {
+      showMessage(data.message || 'فشل الإرسال عبر واتساب', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showMessage('حدث خطأ أثناء الإرسال عبر واتساب', 'error');
+  })
+  .finally(() => showLoading(false));
+}
+
+// ===== البحث عن العملاء =====
+function searchCustomers() {
+  const searchTerm = document.getElementById('customerSearchInput').value.trim();
+  if (!searchTerm) {
+    showMessage('يرجى إدخال مصطلح البحث', 'error');
+    return;
+  }
+
+  showLoading(true);
+  fetch('/barcode_sales/search-customer', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'X-CSRFToken': csrfToken
+    },
+    body: `search_term=${encodeURIComponent(searchTerm)}`
+  })
+  .then(response => response.json())
+  .then(data => {
+    const resultsContainer = document.getElementById('customerSearchResults');
+    resultsContainer.innerHTML = '';
+    
+    if (data.results && data.results.length > 0) {
+      data.results.forEach(customer => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${customer.id}</td>
+          <td>${customer.name}</td>
+          <td><button class="btn btn-sm btn-primary" onclick="selectCustomer('${customer.id}', '${customer.name}')">اختيار</button></td>
+        `;
+        resultsContainer.appendChild(row);
+      });
+    } else {
+      resultsContainer.innerHTML = '<tr><td colspan="3">لا توجد نتائج</td></tr>';
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showMessage('حدث خطأ أثناء البحث', 'error');
+  })
+  .finally(() => showLoading(false));
+}
+
+// ===== اختيار عميل =====
+function selectCustomer(customerId, customerName) {
+  document.getElementById('customerId').value = customerId;
+  document.getElementById('customerName').value = customerName;
+  closeModal('customerSearchModal');
+}
+
+// ===== إضافة عميل جديد =====
+function addNewCustomer() {
+  closeModal('customerSearchModal');
+  document.getElementById('newCustomerModal').style.display = 'flex';
+}
+
+// ===== حفظ العميل الجديد =====
+function saveNewCustomer() {
+  const name = document.getElementById('newCustomerName').value.trim();
+  const phone = document.getElementById('newCustomerPhone').value.trim();
+  const email = document.getElementById('newCustomerEmail').value.trim();
+  const creditLimit = document.getElementById('newCustomerCreditLimit').value || 0;
+
+  if (!name || !phone) {
+    showMessage('يرجى إدخال الاسم والهاتف', 'error');
+    return;
+  }
+
+  showLoading(true);
+  
+  const customerData = {
+    name: name,
+    phone: phone,
+    email: email,
+    credit_limit: creditLimit,
+    _csrf_token: csrfToken
+  };
+
+  fetch('/barcode_sales/add-customer', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
+    },
+    body: JSON.stringify(customerData)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success && data.customer) {
+      selectCustomer(data.customer.id, data.customer.name);
+      showMessage('تم حفظ العميل بنجاح', 'success');
+    } else {
+      showMessage(data.message || 'حدث خطأ أثناء حفظ العميل', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showMessage('حدث خطأ أثناء حفظ العميل', 'error');
+  })
+  .finally(() => showLoading(false));
+}
+
+// ===== إدارة القائمة الجانبية =====
+function setupSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  
+  sidebarToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sidebar.classList.toggle('open');
+    sidebarToggle.style.display = 'none';
+  });
+  
+  document.addEventListener('click', (e) => {
+    if (sidebar.classList.contains('open') && !sidebar.contains(e.target)) {
+      sidebar.classList.remove('open');
+      sidebarToggle.style.display = 'flex';
+    }
+  });
+  
+  sidebar.addEventListener('transitionend', () => {
+    if (!sidebar.classList.contains('open')) {
+      sidebarToggle.style.display = 'flex';
+    }
+  });
+}
+
+// ===== العودة إلى الشاشة الرئيسية =====
+function goBack() {
+  window.location.href = '/main';
+}
+
+// ===== تهيئة الصفحة عند التحميل =====
+document.addEventListener('DOMContentLoaded', () => {
+  loadThemeSettings();
+  fetchCsrfToken();
+  generateInvoiceNumber();
+  
+  document.getElementById('paymentType').addEventListener('change', function() {
+    document.getElementById('customerInfoRow').style.display = this.value === 'credit' ? 'block' : 'none';
+  });
+  
+  document.getElementById('amountPaid').addEventListener('input', updateRemainingAmount);
+  document.getElementById('completeSaleBtn').addEventListener('click', completeSale);
+  document.getElementById('addManualBarcodeBtn').addEventListener('click', addProductManually);
+  document.getElementById('stopScanBtn').addEventListener('click', stopScanner);
+  document.getElementById('darkModeToggle').addEventListener('click', toggleMode);
+  document.getElementById('toggleFlashBtn').addEventListener('click', toggleFlash);
+  document.getElementById('toggleScanBtn').addEventListener('click', toggleScanner);
+  document.getElementById('searchCustomerBtn').addEventListener('click', openSearchModal);
+  document.getElementById('customerSearchInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') searchCustomers();
+  });
+  document.getElementById('saveNewCustomerBtn').addEventListener('click', saveNewCustomer);
+  document.getElementById('printReceiptBtn').addEventListener('click', () => {
+    const saleId = document.getElementById('invoiceNumber').value;
+    if (saleId) printReceipt(saleId);
+  });
+  document.getElementById('sendWhatsAppBtn').addEventListener('click', sendWhatsAppReceipt);
+  document.getElementById('backBtn').addEventListener('click', goBack);
+  
+  setupSidebar();
+  resetForm();
+  
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(() => {
+      initBarcodeScanner();
+    })
+    .catch(err => {
+      console.error('تم رفض إذن الكاميرا:', err);
+      showMessage('يجب منح الإذن لاستخدام الكاميرا', 'error');
+      document.getElementById('manualBarcodeInput').placeholder = 'منح الإذن للكاميرا مطلوب';
+    });
+});
+</script>
+</body>
+</html>
